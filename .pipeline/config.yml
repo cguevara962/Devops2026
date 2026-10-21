@@ -1,0 +1,47 @@
+# .pipeline/config.yml
+# SAP Project Piper — pipeline configuration for AD107102 DevSecOps demo
+#
+# This file tells the SAP CI/CD Service which stages and steps to execute.
+# Focus: security gates BEFORE any artifact reaches Cloud Transport Management.
+#
+# Pipeline flow:
+#   Commit → Build → [Security: detectSecrets + npmAudit] → Release (tmsUpload to DEV)
+#
+# WOW-moment: hardcode a secret in server.js, commit, push → detectSecrets FAILS here.
+
+general:
+  buildTool: npm
+  productiveBranch: main
+
+stages:
+  Build:
+    executeNpm: true           # runs 'npm ci' + 'npm run build' (if defined)
+
+  Security:
+    detectSecrets: true        # ← SECRET SCANNER: fails on any hardcoded credential pattern
+    npmAudit: true             # ← DEPENDENCY SCAN: fails on moderate/high/critical CVEs
+
+  Release:
+    tmsUpload: true            # ← uploads .mtar to Cloud Transport Management node "DEV"
+                               #    only reached if ALL security gates above passed
+
+steps:
+  detectSecrets:
+    # Scan every file in the repository, not just staged changes.
+    # Uses the Yelp detect-secrets library under the hood.
+    scanParameters: "--all-files"
+
+  npmAudit:
+    # Only scan production dependencies (omits devDependencies like @sap/cds-dk).
+    # devDependencies never reach the production runtime, so their CVEs don't matter here.
+    auditedAdvisories:
+      - moderate
+      - high
+      - critical
+    npmAuditParameters: "--omit=dev"
+
+  tmsUpload:
+    # Target TMS node name — must match what you created in Cloud Transport Management.
+    # Credentials are read from the PIPER_tmsCredentialsId Jenkins credential (or SAP CI/CD Service binding).
+    nodeName: DEV
+    mtaPath: mta_archives

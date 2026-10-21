@@ -1,0 +1,9 @@
+ID,name,description,category,price,stock,active
+"p1","Laptop Pro 16","High-performance developer laptop, 64 GB RAM","Electronics",1299.99,45,true
+"p2","Wireless Headphones","Noise-cancelling over-ear headphones","Electronics",249.99,120,true
+"p3","Mechanical Keyboard","Compact TKL keyboard with Cherry MX switches","Electronics",149.99,80,true
+"p4","Office Chair Deluxe","Ergonomic chair with lumbar support and armrests","Furniture",599.99,30,true
+"p5","Standing Desk 160cm","Height-adjustable sit-stand desk","Furniture",799.99,15,true
+"p6","Coffee Maker Premium","12-cup programmable coffee maker with thermal carafe","Appliances",89.99,200,true
+"p7","Monitor 27 4K","27-inch 4K IPS monitor, USB-C 90W PD","Electronics",449.99,60,true
+"p8","Webcam HD 1080p","Full HD webcam with noise-cancelling microphone","Electronics",79.99,150,true

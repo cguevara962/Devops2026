@@ -1,0 +1,118 @@
+name: DevSecOps — Deploy to BTP
+
+# ──────────────────────────────────────────────────────────────────────────────
+# LAYER B — Code Walkthrough Artifact (AD107102 Workshop)
+#
+# This workflow shows how GitHub Actions can authenticate to BTP WITHOUT storing
+# a username/password. It uses the OIDC trust mechanism:
+#
+#   GitHub OIDC token  →  BTP XSUAA JWT (jwt-bearer grant)  →  CF deploy
+#
+# Pre-requisites in the BTP subaccount:
+#   1. XSUAA service instance using xs-security.json (grant-type: jwt-bearer)
+#   2. Trust configuration: Identity Provider = token.actions.githubusercontent.com
+#   3. GitHub Actions variables set (see "Required GitHub vars" below)
+#
+# Required GitHub vars (Settings → Secrets and variables → Actions → Variables):
+#   BTP_AUTH_DOMAIN   e.g. my-subaccount.authentication.eu10.hana.ondemand.com
+#   BTP_CLIENT_ID     XSUAA client_id from xs-security.json binding
+#   CF_API_URL        e.g. https://api.cf.eu10.hana.ondemand.com
+#   CF_ORG            Cloud Foundry org name
+#   CF_SPACE_DEV      CF space name for the DEV environment
+# ──────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write   # required to request the GitHub OIDC token
+  contents: read
+
+jobs:
+  security-and-deploy:
+    runs-on: ubuntu-latest
+    environment: dev
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Node.js setup ─────────────────────────────────────────────────────
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ── 3. SECURITY GATE 1 — detect hardcoded secrets ────────────────────────
+      - name: Security scan — detect secrets
+        run: |
+          pip install detect-secrets
+          detect-secrets scan --all-files --baseline .secrets.baseline
+          detect-secrets audit .secrets.baseline
+        # ↑ If a new hardcoded secret is found that is NOT in the baseline,
+        #   this step fails and the workflow stops here.
+
+      # ── 4. SECURITY GATE 2 — npm dependency vulnerabilities ──────────────────
+      - name: Security scan — npm audit
+        run: npm audit --audit-level=moderate
+        # ↑ Fails if any dependency has a moderate/high/critical CVE.
+
+      # ── 5. Build MTA archive ─────────────────────────────────────────────────
+      - name: Build MTA archive
+        run: |
+          npm install -g mbt
+          mbt build --mtar btp-devsecops-demo.mtar
+
+      # ── 6. OIDC token exchange — no passwords stored anywhere ─────────────────
+      - name: Get GitHub OIDC token
+        id: oidc
+        run: |
+          TOKEN=$(curl -sSf \
+            -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${{ vars.BTP_CLIENT_ID }}" \
+            | jq -r '.value')
+          echo "::add-mask::${TOKEN}"
+          echo "token=${TOKEN}" >> "$GITHUB_OUTPUT"
+
+      - name: Exchange OIDC token for BTP JWT (jwt-bearer grant)
+        id: btp_jwt
+        run: |
+          BTP_TOKEN=$(curl -sSf -X POST \
+            "https://${{ vars.BTP_AUTH_DOMAIN }}/oauth/token" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer" \
+            --data-urlencode "client_id=${{ vars.BTP_CLIENT_ID }}" \
+            --data-urlencode "assertion=${{ steps.oidc.outputs.token }}" \
+            | jq -r '.access_token')
+          echo "::add-mask::${BTP_TOKEN}"
+          echo "token=${BTP_TOKEN}" >> "$GITHUB_OUTPUT"
+        # ↑ XSUAA validates the GitHub-signed JWT and issues a BTP-scoped token.
+        #   No client_secret needed — the trust relationship IS the credential.
+
+      # ── 7. Deploy to Cloud Foundry DEV space ──────────────────────────────────
+      - name: Deploy to BTP DEV
+        env:
+          CF_API:    ${{ vars.CF_API_URL }}
+          CF_ORG:    ${{ vars.CF_ORG }}
+          CF_SPACE:  ${{ vars.CF_SPACE_DEV }}
+          BTP_TOKEN: ${{ steps.btp_jwt.outputs.token }}
+        run: |
+          # Install CF CLI v8 + MTA plugin
+          curl -sSL \
+            "https://packages.cloudfoundry.org/stable?release=linux64-binary&version=v8&source=github" \
+            | tar -xz && sudo mv cf8 /usr/local/bin/cf
+          cf install-plugin multiapps -f
+
+          # Authenticate using the BTP JWT (no username/password in CI)
+          cf api "${CF_API}"
+          CF_HOME=$(mktemp -d)
+          CF_HOME="${CF_HOME}" cf oauth-token "${BTP_TOKEN}"
+          CF_HOME="${CF_HOME}" cf target -o "${CF_ORG}" -s "${CF_SPACE}"
+          CF_HOME="${CF_HOME}" cf deploy mta_archives/btp-devsecops-demo.mtar \
+            --version-rule ALL --abort-on-error

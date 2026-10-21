@@ -1,0 +1,39 @@
+{
+  "xsappname": "btp-devsecops-demo",
+  "tenant-mode": "dedicated",
+  "description": "XSUAA security descriptor for DevSecOps pipeline deployer (AD107102 workshop)",
+
+  "scopes": [
+    {
+      "name": "$XSAPPNAME.Deploy",
+      "description": "Allows CI/CD pipeline to deploy the application to a CF space"
+    },
+    {
+      "name": "$XSAPPNAME.View",
+      "description": "Read-only access to application status (for audit/monitoring)"
+    }
+  ],
+
+  "role-templates": [
+    {
+      "name": "PipelineDeployer",
+      "description": "Assigned to the CI/CD pipeline service account — deploy access only",
+      "scope-references": ["$XSAPPNAME.Deploy"]
+    },
+    {
+      "name": "PipelineViewer",
+      "description": "Read-only role for audit/compliance dashboards",
+      "scope-references": ["$XSAPPNAME.View"]
+    }
+  ],
+
+  "oauth2-configuration": {
+    "token-validity": 3600,
+    "redirect-uris": [],
+    "credential-types": ["binding-secret", "x509"],
+    "grant-types": [
+      "client_credentials",
+      "urn:ietf:params:oauth:grant-type:jwt-bearer"
+    ]
+  }
+}

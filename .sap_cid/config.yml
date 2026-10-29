@@ -1,13 +1,13 @@
 general:
-  buildTool: mta
   productiveBranch: main
 
 stages:
   build:
+    buildTool: mta
+    buildToolVersion: "Java 21 Node 20"
     detectSecrets: true
     npmAudit: true
-  release:
-    tmsUpload: true
+  release: {}
 
 steps:
   detectSecrets:

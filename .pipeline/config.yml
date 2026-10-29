@@ -42,6 +42,6 @@ steps:
 
   tmsUpload:
     # Target TMS node name — must match what you created in Cloud Transport Management.
-    # Credentials are read from the PIPER_tmsCredentialsId Jenkins credential (or SAP CI/CD Service binding).
     nodeName: DEV
     mtaPath: mta_archives
+    credentialsId: tms-service-key

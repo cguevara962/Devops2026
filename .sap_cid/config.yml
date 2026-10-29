@@ -2,5 +2,8 @@ stages:
   build:
     buildTool: mta
     buildToolVersion: MBTJ21N22
+  compliance:
+    detectSecrets: true
+    npmAudit: true
   release: {}
 

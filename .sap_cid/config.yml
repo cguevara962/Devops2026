@@ -4,7 +4,7 @@ general:
 stages:
   build:
     buildTool: mta
-    buildToolVersion: "Java 21 Node 20"
+    buildToolVersion: MBTJ21N20
     detectSecrets: true
     npmAudit: true
   release: {}

@@ -1,0 +1,30 @@
+general:
+  buildTool: mta
+  productiveBranch: main
+
+stages:
+  Build:
+    executeNpm: true
+
+  Security:
+    detectSecrets: true
+    npmAudit: true
+
+  Release:
+    tmsUpload: true
+
+steps:
+  detectSecrets:
+    scanParameters: "--all-files"
+
+  npmAudit:
+    auditedAdvisories:
+      - moderate
+      - high
+      - critical
+    npmAuditParameters: "--omit=dev"
+
+  tmsUpload:
+    nodeName: DEV
+    mtaPath: mta_archives
+    credentialsId: tms-service-key

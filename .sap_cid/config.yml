@@ -1,6 +1,6 @@
 stages:
   build:
     buildTool: mta
-    buildToolVersion: MBTJ21N20
+    buildToolVersion: MBTJ21N22
   release: {}
 

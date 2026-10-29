@@ -1,24 +1,6 @@
-general:
-  productiveBranch: main
-
 stages:
   build:
     buildTool: mta
     buildToolVersion: MBTJ21N20
   release: {}
 
-steps:
-  detectSecrets:
-    scanParameters: "--all-files"
-
-  npmAudit:
-    auditedAdvisories:
-      - moderate
-      - high
-      - critical
-    npmAuditParameters: "--omit=dev"
-
-  tmsUpload:
-    nodeName: DEV
-    mtaPath: mta_archives
-    credentialsId: tms-service-key

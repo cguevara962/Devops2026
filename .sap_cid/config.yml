@@ -3,14 +3,10 @@ general:
   productiveBranch: main
 
 stages:
-  Build:
-    executeNpm: true
-
-  Security:
+  build:
     detectSecrets: true
     npmAudit: true
-
-  Release:
+  release:
     tmsUpload: true
 
 steps:

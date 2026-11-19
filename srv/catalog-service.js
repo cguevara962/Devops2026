@@ -31,5 +31,6 @@ module.exports = cds.service.impl(function () {
   //   GET /catalog/$metadata          → OData metadata document
   //
   // ── WOW-moment (DEMO STEP 3) ─────────────────────────────────────────────
-  const DB_PASSWORD = 'Workshop-Demo-2026!'; // hardcoded credential for demo
+  // Add here during live demo: const DB_PASSWORD = 'Workshop-Demo-2026!'
+  // grep in Compliance stage will catch it and block the Release.
 });

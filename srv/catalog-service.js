@@ -30,8 +30,6 @@ module.exports = cds.service.impl(function () {
   //   GET /catalog/Products('p1')     → single product by key
   //   GET /catalog/$metadata          → OData metadata document
   //
-  // ── WOW-moment reminder (DEMO STEP 3) ────────────────────────────────────
-  // During the live demo, add a hardcoded credential line here, commit and
-  // push — the detectSecrets gate in the pipeline will catch it immediately.
-  // See DEMO_SCRIPT.md for the exact steps.
+  // ── WOW-moment (DEMO STEP 3) ─────────────────────────────────────────────
+  const DB_PASSWORD = 'Workshop-Demo-2026!'; // hardcoded credential for demo
 });

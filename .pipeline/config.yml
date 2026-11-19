@@ -17,7 +17,7 @@ stages:
   Build:
     executeNpm: true           # runs 'npm ci' + 'npm run build' (if defined)
 
-  Security:
+  Compliance:
     detectSecrets: true        # ← SECRET SCANNER: fails on any hardcoded credential pattern
     npmAudit: true             # ← DEPENDENCY SCAN: fails on moderate/high/critical CVEs
 
